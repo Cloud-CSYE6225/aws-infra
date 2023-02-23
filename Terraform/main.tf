@@ -148,3 +148,62 @@ resource "aws_route_table_association" "public_association3" {
   subnet_id      = aws_subnet.public-3.id
   route_table_id = aws_route_table.public.id
 }
+
+resource "aws_security_group" "instance" {
+  name_prefix = "instance-sd"
+  vpc_id      = aws_vpc.vpc1.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+   
+    egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "all"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "Terraform_Managed" {
+  ami                    = var.ami_id
+  instance_type          = "t2.micro"
+  key_name               = "SD"
+  subnet_id              = aws_subnet.public-1.id
+  vpc_security_group_ids = [aws_security_group.instance.id]
+  associate_public_ip_address = true  # enable public IP and DNS for the instance
+  disable_api_termination = true
+
+  root_block_device {
+    volume_size = 50 # root volume size in GB
+}
+
+  tags = {
+    Name = "Terraform Managed EC2 Instance"
+  }
+}
+

@@ -73,6 +73,11 @@ variable "public_routetable_cidr" {
   description = "Public route table cidr block"
 }
 
+variable "ami_id" {
+  type = string
+  description = "ami_id created by packer build"
+}
+
 # variable "availability_zones" {
 #  default = "us-east-1a"
 #   type        = list
@@ -82,3 +87,4 @@ variable "public_routetable_cidr" {
 data "aws_availability_zones" "available" {
   state = "available"
 }
+
