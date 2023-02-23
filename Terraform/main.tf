@@ -190,15 +190,20 @@ resource "aws_security_group" "instance" {
 }
 
 resource "aws_instance" "Terraform_Managed" {
-  ami                    = "ami-0b46490f57ad05103"
+  ami                    = var.ami_id
   instance_type          = "t2.micro"
   key_name               = "SD"
   subnet_id              = aws_subnet.public-1.id
   vpc_security_group_ids = [aws_security_group.instance.id]
   associate_public_ip_address = true  # enable public IP and DNS for the instance
+  disable_api_termination = true
+
+  root_block_device {
+    volume_size = 50 # root volume size in GB
+}
 
   tags = {
-    Name = "Application-run_AMI"
+    Name = "Terraform Managed EC2 Instance"
   }
 }
 
