@@ -237,6 +237,9 @@ resource "aws_iam_policy" "webapp_s3_policy" {
         Resource = [
           "arn:aws:s3:::my-bucket-${random_id.random.hex}",
           "arn:aws:s3:::my-bucket-${random_id.random.hex}/*",
+          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.jpg",
+          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.png",
+          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.jpeg"
         ]
       },
     ]
@@ -248,19 +251,19 @@ resource "aws_s3_bucket" "private_s3_bucket" {
   acl           = "private"
   force_destroy = true
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
-
   tags = {
     Environment = "dev"
     Name        = "private_s3_bucket"
   }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
+  bucket = aws_s3_bucket.private_s3_bucket.id
+   rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
 }
 
 resource "aws_s3_bucket_public_access_block" "my_bucket_public_access_block" {
@@ -359,7 +362,7 @@ resource "aws_instance" "Terraform_Managed" {
   disable_api_termination     = false
   user_data = <<-EOF
 #!/bin/bash
-cd /home/ec2-user
+cd /home/ec2-user/script
 touch ./.env
 
 echo "DB_HOST=$(echo ${aws_db_instance.rds_instance.endpoint} | cut -d ':' -f 1)" >> .env
@@ -367,7 +370,16 @@ echo "DB_USER=${aws_db_instance.rds_instance.username}" >> .env
 echo "DB_PASSWORD=${aws_db_instance.rds_instance.password}" >> .env
 echo "S3_BUCKET_NAME=${aws_s3_bucket.private_s3_bucket.bucket}" >> .env
 
-source ./.env
+sudo su
+cd /
+mkdir ./upload
+sudo chown ec2-user:ec2-user /home/ec2-user/script/*
+sudo systemctl stop node.service
+sudo systemctl daemon-reload
+sudo systemctl enable node.service
+sudo systemctl start node.service
+
+source ./.env
 
 EOF
 
