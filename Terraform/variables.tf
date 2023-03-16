@@ -90,15 +90,21 @@ data "aws_availability_zones" "available" {
 
 
 variable "db_username" {
+  type = string
   #default = "myuser"
 }
 
 variable "db_password" {
+  type = string
   #default = "mypassword"
 }
 
 variable "db_host" {
+  type = string
   #default = "hostname"
 }
 
+variable "domain_name" {
+  type = string
+}
 
