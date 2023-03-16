@@ -223,7 +223,8 @@ resource "aws_iam_policy" "webapp_s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:ListBucket"
         ]
         Effect = "Allow"
         Resource = [
@@ -313,7 +314,13 @@ resource "aws_db_parameter_group" "postgres_params" {
   }
 }
 
+resource "aws_db_subnet_group" "private_rds_subnet_group" {
+  name        = "private-rds-subnet-group"
+  description = "Private subnet group for RDS instances"
+  subnet_ids  = [aws_subnet.private-1.id, aws_subnet.private-2.id]
 
+  
+}
 
 # Create the RDS instance
 resource "aws_db_instance" "rds_instance" {
@@ -337,11 +344,7 @@ resource "aws_db_instance" "rds_instance" {
   }
 }
 
-resource "aws_db_subnet_group" "private_rds_subnet_group" {
-  name        = "private-rds-subnet-group"
-  description = "Private subnet group for RDS instances"
-  subnet_ids  = [aws_subnet.private-1.id, aws_subnet.private-2.id]
-}
+
 
 
 resource "aws_instance" "Terraform_Managed" {
