@@ -201,13 +201,6 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.instance.id]
   }
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"] # Restrict SSH access to VPC CIDR range
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -230,8 +223,7 @@ resource "aws_iam_policy" "webapp_s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:DeleteObject"
         ]
         Effect = "Allow"
         Resource = [
@@ -360,6 +352,9 @@ resource "aws_instance" "Terraform_Managed" {
   vpc_security_group_ids      = [aws_security_group.instance.id]
   associate_public_ip_address = true # enable public IP and DNS for the instance
   disable_api_termination     = false
+  depends_on = [
+    aws_db_instance.rds_instance
+  ]
   user_data = <<-EOF
 #!/bin/bash
 cd /home/ec2-user/script
