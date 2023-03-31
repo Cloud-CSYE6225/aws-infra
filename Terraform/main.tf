@@ -224,20 +224,46 @@ resource "aws_iam_policy" "webapp_s3_policy" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:PutMetricData",
+          "ec2:DescribeTags"
+
         ]
         Effect = "Allow"
         Resource = [
           "arn:aws:s3:::my-bucket-${random_id.random.hex}",
-          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*",
-          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.jpg",
-          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.png",
-          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*.jpeg"
+          "arn:aws:s3:::my-bucket-${random_id.random.hex}/*"
         ]
       },
     ]
   })
 }
+
+
+# resource "aws_iam_policy" "cloudwatch_agent_policy" {
+#   name = "CloudWatchAgentPolicy"
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = [
+#           "cloudwatch:GetMetricStatistics",
+#           "cloudwatch:GetMetricData",
+#           "cloudwatch:ListMetrics",
+#           "cloudwatch:PutMetricData",
+#           "logs:CreateLogGroup",
+#           "logs:CreateLogStream",
+#           "logs:PutLogEvents"
+#         ]
+#         Effect   = "Allow"
+#         Resource = ["*"]
+#       },
+#     ]
+#   })
+# }
 
 resource "aws_s3_bucket" "private_s3_bucket" {
   bucket        = "my-bucket-${random_id.random.hex}"
@@ -252,11 +278,11 @@ resource "aws_s3_bucket" "private_s3_bucket" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
   bucket = aws_s3_bucket.private_s3_bucket.id
-   rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "my_bucket_public_access_block" {
@@ -319,7 +345,6 @@ resource "aws_db_subnet_group" "private_rds_subnet_group" {
   description = "Private subnet group for RDS instances"
   subnet_ids  = [aws_subnet.private-1.id, aws_subnet.private-2.id]
 
-  
 }
 
 # Create the RDS instance
@@ -333,7 +358,7 @@ resource "aws_db_instance" "rds_instance" {
   db_name                = var.db_host
   username               = var.db_username
   password               = var.db_password
-  db_subnet_group_name   = "private-rds-subnet-group"
+  db_subnet_group_name   = aws_db_subnet_group.private_rds_subnet_group.name
   publicly_accessible    = false
   skip_final_snapshot    = true
   parameter_group_name   = aws_db_parameter_group.postgres_params.name
@@ -391,7 +416,7 @@ EOF
     Name = "Terraform Managed EC2 Instance"
   }
 
-  count = 1
+ 
   lifecycle {
     ignore_changes = [subnet_id]
   }
@@ -414,6 +439,13 @@ resource "aws_iam_role" "ec2_csye6225_role" {
           Service = "ec2.amazonaws.com"
         }
       },
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${data.aws_region.current.name}.amazonaws.com"
+        }
+      }
     ]
   })
 
@@ -422,8 +454,16 @@ resource "aws_iam_role" "ec2_csye6225_role" {
   }
 }
 
+data "aws_region" "current" {}
+
 resource "aws_iam_role_policy_attachment" "webapp_s3_policy_attachment" {
   policy_arn = aws_iam_policy.webapp_s3_policy.arn
+  role       = aws_iam_role.ec2_csye6225_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_policy_attachment" {
+//  name       = "cloudwatch_policy_attachment"
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
   role       = aws_iam_role.ec2_csye6225_role.name
 }
 
