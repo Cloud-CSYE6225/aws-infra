@@ -477,7 +477,7 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 
 
 output "public_ip" {
-  value = aws_instance.Terraform_Managed[0].public_ip
+  value = aws_instance.Terraform_Managed.public_ip
 }
 
 
@@ -492,7 +492,7 @@ resource "aws_route53_record" "web" {
 
   ttl = 300
   records = [
-    aws_instance.Terraform_Managed[0].public_ip,
+    aws_instance.Terraform_Managed.public_ip,
   ]
 }
 
